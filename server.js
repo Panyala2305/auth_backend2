@@ -1,67 +1,42 @@
 import express from "express";
-import connectDB from "./config/db.js";
 import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
-
-const app = express();
-
-app.use(express.json());
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
 // Load environment variables
 dotenv.config();
 
 // Connect MongoDB
 connectDB();
+
+// Create Express App
+const app = express();
+
+// Middleware
+
+// Parse JSON data
+app.use(express.json());
+
+// Parse Cookies
+app.use(cookieParser());
+
+// Allow Frontend Requests
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
+    })
 );
 
+// Routes
+app.use("/api/auth", authRoutes);
 
-app.post("/api/auth/signup", async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
-    }
-
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: "Email already exists",
-      });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-    });
-
-    res.status(201).json({
-      message: "Signup Successful",
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-    });
-  } catch (error) {
-    console.log(error);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
-  }
+// Test Route
+app.get("/", (req, res) => {
+    res.send("Server is Running...");
 });
 
 // Port
